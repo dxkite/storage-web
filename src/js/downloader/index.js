@@ -42,7 +42,7 @@ export default class Downloader {
                 new MetaDecoder(metaData).decode().then(meta => {
                     resolve(meta)
                 }).catch(reject)
-            })
+            }).catch(reject)
         });
     }
 
@@ -101,7 +101,7 @@ export default class Downloader {
                             reject(error)
                         }
                     });
-                })
+                }).catch(reject)
             })
         }
         if (type == TYPE_URI && encode == ENCODE_NONE) {
