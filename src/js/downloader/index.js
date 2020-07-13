@@ -175,7 +175,11 @@ export default class Downloader {
     }
 
     uint8AsString(data) {
-        return new String(new TextDecoder("utf-8").decode(data))
+        var str = ''
+        for (var i = 0; i < data.length; i++) {
+            str += String.fromCharCode(data[i]);
+        }
+        return new String(str);
     }
 }
 

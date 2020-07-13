@@ -79,6 +79,7 @@ export default {
             this.download = URL.createObjectURL(file);
           })
           .catch(e => {
+            console.log(e)
             this.processText.push({
               id: this.processText.length,
               text: "下载文件失败:" + e
