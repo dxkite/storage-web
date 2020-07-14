@@ -76,6 +76,7 @@ export default {
         })
           .parseDownload(files[0])
           .then(file => {
+            console.log(file)
             this.download = URL.createObjectURL(file);
           })
           .catch(e => {
@@ -171,6 +172,13 @@ export default {
 }
 .bottom {
   text-align: center;
+}
+
+.process {
+  max-height: 10em;
+  overflow: auto;
+  margin: 1em;
+  border: #999 1px solid;
 }
 
 .bottom a {

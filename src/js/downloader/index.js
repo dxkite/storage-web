@@ -13,22 +13,28 @@ export const ENCODE_NONE = 0 // 无编码
 export const ENCODE_IMAGE = 1 // 图形编码
 
 export const TYPE_URI = 0 // 下载链接
-export const TYPE_STREAM = 0 // 原始数据
+export const TYPE_STREAM = 1 // 原始数据
+
+export const STATUS_CREATE = 0
+export const STATUS_UPLOADING = 1
+export const STATUS_FINISH = 2
+export const STATUS_LOCAL = 3
 
 export default class Downloader {
 
-    constructor(listener) {
-        listener = listener || {}
+    constructor(config) {
+        config = config || {}
         // 监听下载开始 
-        this.onDownloadStart = listener.start || listener.onDownloadStart || function (meta) { console.log('onDownloadStart', meta) }
+        this.onDownloadStart = config.start || config.onDownloadStart || function (meta) { console.log('onDownloadStart', meta) }
         // 监听下载结束
-        this.onDownloadFinish = listener.finish || function (d) { console.log('onDownloadFinish', d) }
+        this.onDownloadFinish = config.finish || function (d) { console.log('onDownloadFinish', d) }
         // 监听下载进度
-        this.onDownloadProcess = listener.process || function (i, max) { console.log('onDownloadProcess', i, max) }
+        this.onDownloadProcess = config.process || function (i, max) { console.log('onDownloadProcess', i, max) }
         this.downloadTotal = 0
         this.downloadedBlocks = new Map()
         this.downloadCount = 0
         this.meta = {}
+        this.limit = config.limit || 2;
     }
 
     parseDownload(source) {
@@ -48,31 +54,52 @@ export default class Downloader {
 
     download(meta) {
         return new Promise((resolve, reject) => {
+            this.downloadLimit()
             // 初始话参数
             this.meta = meta
             this.downloadCount = 0
             this.downloadTotal = meta.block.length
+            if (this.meta.status != STATUS_FINISH) {
+                reject(new Error('Error Status'))
+            }
             // 开始下载，提供元数据
             this.onDownloadStart(meta)
-            // 下载每个块
-            meta.block.forEach(block => {
-                // 下载块数据
-                this.downloadBlock(block).then(blockData => {
-                    this.downloadedBlocks.set(block.i, blockData)
-                    // console.log(block.i, blockData)
-                    this.onDownloadProcess(this.downloadCount, this.downloadTotal, block.i)
-                    this.downloadCount++
-                    // 如果下载完成
-                    if (this.downloadCount == this.downloadTotal) {
-                        let mimeType = mime.getType(meta.name)
-                        // 整合文件
-                        this.concatFile(mimeType).then(blob => {
-                            resolve(blob)
-                        }).catch(reject)
-                    }
+            this.downloadLimit(meta.block, this.limit).then(() => {
+                let mimeType = mime.getType(meta.name)
+                // 整合文件
+                this.concatFile(mimeType).then(blob => {
+                    resolve(blob)
                 }).catch(reject)
-            });
+            }).catch(reject)
         })
+    }
+
+    /**
+     * 并发下载
+     * 
+     * @param {Array} blocks 
+     * @param {Integer} limit 
+     */
+    downloadLimit(blocks, limit) {
+        let process = (arr) => {
+            let block = arr.shift()
+            return this.downloadBlock(block).then(blockData => {
+                this.downloadedBlocks.set(block.i, blockData)
+                // console.log(block.i, blockData)
+                this.onDownloadProcess(this.downloadCount, this.downloadTotal, block.i)
+                this.downloadCount++
+                if (arr.length > 0) {
+                    return process(arr)
+                }
+                return this.downloadedBlocks
+            })
+        }
+        let blockArr = [].concat(blocks)
+        let work = [];
+        while (limit-- > 0) {
+            work.push(process(blockArr))
+        }
+        return Promise.all(work)
     }
 
     /**
@@ -80,7 +107,7 @@ export default class Downloader {
      * @param {Object} block 
      */
     downloadBlock(block) {
-        return this.createBlockData(this.meta.type, this.meta.encode, block.d)
+        return this.downloadBlockData(this.meta.type, this.meta.encode, block.d)
     }
 
     /**
@@ -89,7 +116,7 @@ export default class Downloader {
      * @param {Integer} encode 
      * @param {Uint8Array} data 
      */
-    createBlockData(type, encode, data) {
+    downloadBlockData(type, encode, data) {
         // console.log(type, encode)
         if (type == TYPE_URI && encode == ENCODE_IMAGE) {
             return new Promise((resolve, reject) => {
