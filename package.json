@@ -12,6 +12,7 @@
   "dependencies": {
     "axios": "^0.19.2",
     "bencode": "^2.0.1",
+    "fast-text-encoding": "^1.0.3",
     "mime": "^2.4.6",
     "pngjs": "^5.0.0",
     "vue": "^2.5.2",

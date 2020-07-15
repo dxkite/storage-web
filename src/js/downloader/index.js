@@ -2,6 +2,7 @@ import MetaDecoder from './meta-decoder'
 import LoadFileAsArrayBuffer from './file-loader'
 import { PNG } from "pngjs";
 import mime from 'mime'
+import 'fast-text-encoding'
 
 export {
     MetaDecoder,
@@ -202,11 +203,7 @@ export default class Downloader {
     }
 
     uint8AsString(data) {
-        var str = ''
-        for (var i = 0; i < data.length; i++) {
-            str += String.fromCharCode(data[i]);
-        }
-        return new String(str);
+        return new String(new TextDecoder().decode(data));
     }
 }
 

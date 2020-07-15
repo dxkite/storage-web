@@ -1,5 +1,6 @@
 import loadSource from '../file-loader'
 import { decode as Bdecode } from 'bencode'
+import 'fast-text-encoding'
 
 class MetaDecoder {
 
@@ -40,11 +41,7 @@ class MetaDecoder {
     }
 
     uint8AsString(data) {
-        var str = ''
-        for (var i = 0; i < data.length; i++) {
-            str += String.fromCharCode(data[i]);
-        }
-        return new String(str);
+        return new String(new TextDecoder().decode(data));
     }
 }
 
