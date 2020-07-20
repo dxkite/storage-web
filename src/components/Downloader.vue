@@ -24,7 +24,12 @@
         <div class="text" v-for="item in processText" v-bind:key="item.id">{{ item.text }}</div>
       </div>
       <div>
-        <a :href="download" class="btn-download" v-if="download.length > 0">保存到本地</a>
+        <a
+          :href="download"
+          class="btn-download"
+          v-if="download.length > 0"
+          :download="downloadName"
+        >保存到本地</a>
       </div>
       <div class="bottom">
         <a href="https://github.com/dxkite/go-storage-web">Github Source</a>
@@ -46,6 +51,7 @@ export default {
       size: "0kb",
       download: "",
       name: "",
+      downloadName: "test.txt",
       processText: []
     };
   },
@@ -74,13 +80,14 @@ export default {
             });
           }
         })
-          .parseDownload(files[0])
+          .downloadToURL(files[0])
           .then(file => {
-            console.log(file)
-            this.download = URL.createObjectURL(file);
+            console.log(file);
+            this.download = file.url;
+            this.downloadName = file.name;
           })
           .catch(e => {
-            console.log(e)
+            console.log(e);
             this.processText.push({
               id: this.processText.length,
               text: "下载文件失败:" + e

@@ -36,9 +36,29 @@ export default class Downloader {
         this.downloadCount = 0
         this.meta = {}
         this.limit = config.limit || 2;
+        this.filesystem = config.filesystem || false;
     }
 
-    parseDownload(source) {
+    /**
+     * 下载成URL
+     * 
+     * @param {File|Blob|ArrayBuffer} source 
+     */
+    downloadToURL(source) {
+        return this.parse(source).then(meta => {
+            return this.download(meta).then(file => {
+                return this.createDownloadURL(file)
+            })
+        }
+        )
+    }
+
+    /**
+     * 下载成 Blob
+     * 
+     * @param {File|Blob|ArrayBuffer} source 
+     */
+    downloadToBlob(source) {
         return this.parse(source).then(meta => this.download(meta))
     }
 
@@ -72,6 +92,34 @@ export default class Downloader {
                     resolve(blob)
                 }).catch(reject)
             }).catch(reject)
+        })
+    }
+
+    /**
+     * 创建下载文件
+     * 
+     * @param {File|Blob} blob 
+     */
+    createDownloadURL(blob) {
+        return new Promise((resolve, reject) => {
+            if (this.filesystem) {
+                window.requestFileSystem = window.requestFileSystem || window.webkitRequestFileSystem;
+                if (window.requestFileSystem != undefined) {
+                    let file = this.meta.name
+                    window.webkitRequestFileSystem(window.TEMPORARY, blob.size, (fs) => {
+                        fs.root.getFile(file, { create: true }, (fileEntry) => {
+                            fileEntry.createWriter((fileWriter) => {
+                                fileWriter.write(blob)
+                            });
+                            resolve({ name: this.meta.name, meta: this.meta, url: fileEntry.toURL() })
+                        }, reject);
+                    }, reject);
+                } else {
+                    resolve({ name: this.meta.name, meta: this.meta, url: URL.createObjectURL(blob) });
+                }
+            } else {
+                resolve({ name: this.meta.name, meta: this.meta, url: URL.createObjectURL(blob) });
+            }
         })
     }
 
