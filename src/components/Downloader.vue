@@ -25,11 +25,12 @@
       </div>
       <div>
         <a
-          :href="download"
+          v-for="item in download"
+          v-bind:key="item.id"
+          :href="item.url"
           class="btn-download"
-          v-if="download.length > 0"
-          :download="downloadName"
-        >保存到本地</a>
+          :download="item.name"
+        >保存 {{ item.name }} 到本地</a>
       </div>
       <div class="bottom">
         <a href="https://github.com/dxkite/go-storage-web">Github Source</a>
@@ -49,9 +50,8 @@ export default {
     return {
       metaData: null,
       size: "0kb",
-      download: "",
+      download: [],
       name: "",
-      downloadName: "test.txt",
       processText: []
     };
   },
@@ -62,6 +62,7 @@ export default {
     fileChange: function(file) {
       let files = document.getElementById("select").files;
       if (files.length > 0) {
+        this.processText = [];
         new Downloader({
           start: meta => {
             this.metaData = meta;
@@ -83,8 +84,7 @@ export default {
           .downloadToURL(files[0])
           .then(file => {
             console.log(file);
-            this.download = file.url;
-            this.downloadName = file.name;
+            this.download.push(file);
           })
           .catch(e => {
             console.log(e);
