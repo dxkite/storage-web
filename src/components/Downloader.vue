@@ -1,7 +1,7 @@
 <template>
   <div>
     <div class="main">
-      <div class="logo">Go Storage downloader</div>
+      <div class="logo">Storage downloader</div>
       <div class="container">
         <button class="selectBtn" id="selectBtn" @click="select">选择Meta文件</button>
         <input type="file" id="select" @change="fileChange" hidden />
@@ -33,8 +33,7 @@
         >保存 {{ item.name }} 到本地</a>
       </div>
       <div class="bottom">
-        <a href="https://github.com/dxkite/go-storage-web">Github Source</a>
-        <a href="https://github.com/dxkite/go-storage">Client</a>
+        <a v-for="(item,id) in links" v-bind:key="id" :href="item.link">{{ item.title }}</a>
       </div>
     </div>
   </div>
@@ -52,50 +51,64 @@ export default {
       size: "0kb",
       download: [],
       name: "",
-      processText: []
+      processText: [],
+      links: [
+        {
+          title: "Web Source",
+          link: "https://github.com/dxkite/storage-web",
+        },
+        {
+          title: "Client Source",
+          link: "https://github.com/dxkite/storage",
+        },
+        {
+          title: "Download Uploader",
+          link: "https://github.com/dxkite/storage/releases/latest",
+        },
+      ],
     };
   },
   methods: {
-    select: function() {
+    select: function () {
       document.getElementById("select").click();
     },
-    fileChange: function(file) {
+    fileChange: function (file) {
       let files = document.getElementById("select").files;
       if (files.length > 0) {
         this.processText = [];
         new Downloader({
-          start: meta => {
+          start: (meta) => {
             this.metaData = meta;
             this.size = formatSize(meta.size);
           },
           process: (i, total, index) => {
             this.processText.push({
               id: i,
-              text: "第" + index + "块，下载成功"
+              text: "第" + index + "块，下载成功",
             });
           },
           finish: () => {
             this.processText.push({
               id: this.processText.length,
-              text: "下载完成，组装文件中"
+              text: "下载完成，组装文件中",
             });
-          }
+          },
         })
           .downloadToURL(files[0])
-          .then(file => {
+          .then((file) => {
             console.log(file);
             this.download.push(file);
           })
-          .catch(e => {
+          .catch((e) => {
             console.log(e);
             this.processText.push({
               id: this.processText.length,
-              text: "下载文件失败:" + e
+              text: "下载文件失败:" + e,
             });
           });
       }
-    }
-  }
+    },
+  },
 };
 </script>
 
@@ -191,5 +204,6 @@ export default {
 .bottom a {
   color: #666;
   text-decoration: none;
+  padding-left: 1em;
 }
 </style>
